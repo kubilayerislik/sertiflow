@@ -1,0 +1,15 @@
+node_modules
+dist
+build
+.next
+.env
+.env.local
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+storage/
+.DS_Store
+coverage
+*.tsbuildinfo
+public/pdf.worker.min.mjs

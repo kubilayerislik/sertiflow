@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  fullName     String
+  passwordHash String?
+  role         UserRole  @default(USER)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  coursesCreated     Course[]     @relation("CourseCreatedBy")
+  enrollmentsCreated   Enrollment[] @relation("EnrollmentCreatedBy")
+  enrollmentsDeleted   Enrollment[] @relation("EnrollmentDeletedBy")
+  importBatches        ImportBatch[]
+  mailBatches          MailBatch[]
+  mailLogsSent         MailLog[]    @relation("MailLogSentBy")
+}
+
+model Course {
+  id             String    @id @default(cuid())
+  name           String
+  shortName      String
+  description    String?
+  startDate      DateTime  @db.Date
+  endDate        DateTime  @db.Date
+  certificateSeq Int       @default(0)
+  mailSubject    String    @default("")
+  mailBody       String    @default("")
+  createdById    String
+  createdBy      User      @relation("CourseCreatedBy", fields: [createdById], references: [id])
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  templates     CertificateTemplate[]
+  enrollments   Enrollment[]
+  importBatches ImportBatch[]
+  mailBatches   MailBatch[]
+}
+
+model CertificateTemplate {
+  id                  String   @id @default(cuid())
+  courseId            String
+  course              Course   @relation(fields: [courseId], references: [id])
+  fileName            String
+  storageKey          String
+  pageWidth           Float
+  pageHeight          Float
+  isActive            Boolean  @default(true)
+  uploadedAt          DateTime @default(now())
+  signatureStorageKey String?
+
+  fields TemplateField[]
+}
+
+model TemplateField {
+  id         String              @id @default(cuid())
+  templateId String
+  template   CertificateTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  fieldType  String
+  x          Float
+  y          Float
+  width      Float
+  height     Float
+  fontKey    String
+  fontSize   Float
+  minFontSize Float
+  color      String
+  align      String
+  dateFormat String?
+  staticText String?
+  uppercase  Boolean             @default(false)
+}
+
+model Enrollment {
+  id               String    @id @default(cuid())
+  courseId         String
+  course           Course    @relation(fields: [courseId], references: [id])
+  firstName        String
+  lastName         String
+  studentNo        String
+  email            String
+  certificateNo    String    @unique
+  certificateDate  DateTime  @db.Date
+  verificationCode String    @unique
+  searchText       String
+  importBatchId    String?
+  importBatch      ImportBatch? @relation(fields: [importBatchId], references: [id])
+  createdById      String
+  createdBy        User      @relation("EnrollmentCreatedBy", fields: [createdById], references: [id])
+  deletedAt        DateTime?
+  deletedById      String?
+  deletedBy        User?     @relation("EnrollmentDeletedBy", fields: [deletedById], references: [id])
+  anonymizedAt     DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  mailLogs MailLog[]
+}
+
+model ImportBatch {
+  id              String   @id @default(cuid())
+  courseId        String
+  course          Course   @relation(fields: [courseId], references: [id])
+  fileName        String
+  certificateDate DateTime @db.Date
+  totalRows       Int
+  insertedRows    Int
+  skippedRows     Int
+  createdById     String
+  createdBy       User     @relation(fields: [createdById], references: [id])
+  createdAt       DateTime @default(now())
+
+  enrollments Enrollment[]
+}
+
+model MailBatch {
+  id          String    @id @default(cuid())
+  courseId    String
+  course      Course    @relation(fields: [courseId], references: [id])
+  total       Int
+  sentCount   Int       @default(0)
+  failedCount Int       @default(0)
+  status      String
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+  finishedAt  DateTime?
+
+  mailLogs MailLog[]
+}
+
+model MailLog {
+  id           String     @id @default(cuid())
+  enrollmentId String
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  mailBatchId  String?
+  mailBatch    MailBatch? @relation(fields: [mailBatchId], references: [id])
+  toEmail      String
+  status       String
+  attempts     Int        @default(0)
+  errorMessage String?
+  nextAttemptAt DateTime?
+  sentById     String
+  sentBy       User       @relation("MailLogSentBy", fields: [sentById], references: [id])
+  queuedAt     DateTime   @default(now())
+  sentAt       DateTime?
+}

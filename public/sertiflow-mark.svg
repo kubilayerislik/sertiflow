@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-label="Sertiflow">
+  <rect x="4" y="4" width="40" height="40" rx="12" fill="#001A4D"/>
+  <path
+    d="M12 30c6-10 14-12 22-8 4 2 6 0 8-4"
+    stroke="#FFCD00"
+    stroke-width="3.2"
+    stroke-linecap="round"
+    fill="none"
+  />
+  <path
+    d="M12 22c5-6 12-8 18-5 5 3 8 1 10-3"
+    stroke="#ffffff"
+    stroke-opacity="0.35"
+    stroke-width="2.2"
+    stroke-linecap="round"
+    fill="none"
+  />
+  <circle cx="34" cy="14" r="3" fill="#FFCD00"/>
+</svg>

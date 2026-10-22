@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: sertiflow
+          POSTGRES_PASSWORD: sertiflow
+          POSTGRES_DB: sertiflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sertiflow -d sertiflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://sertiflow:sertiflow@localhost:5432/sertiflow
+      SESSION_SECRET: ci-session-secret-at-least-32-characters-long
+      MAIL_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - name: Prisma migrate
+        run: npx prisma migrate deploy
+      - run: npm test
+      - name: Docker build
+        run: docker build -t sertiflow .
+      - name: Audit production deps
+        run: npm audit --omit=dev --audit-level=high
